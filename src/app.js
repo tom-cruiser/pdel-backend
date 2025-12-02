@@ -18,8 +18,8 @@ app.use(compression());
 app.use(
   cors({
     origin: process.env.CLIENT_URL
-      ? process.env.CLIENT_URL.split(',')
-      : ["http://localhost:5173"],
+      ? process.env.CLIENT_URL.split(",")
+      : ["https://pdel-front.onrender.com/"],
     credentials: true,
   })
 );
