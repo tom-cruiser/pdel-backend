@@ -51,6 +51,7 @@ function getCollections() {
     profiles: db.collection('profiles'),
     courts: db.collection('courts'),
     bookings: db.collection('bookings'),
+    coaches: db.collection('coaches'),
     messages: db.collection('messages'),
     gallery_images: db.collection('gallery_images'),
   };

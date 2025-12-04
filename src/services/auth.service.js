@@ -37,7 +37,7 @@ class AuthService {
 
     if (!supabaseClient) {
       throw new Error(
-        "Supabase not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY or use a dev token 'dev:<userId>'"
+        "Authentication unavailable: no Supabase client configured. For local development use a dev token 'dev:<userId>' or enable ALLOW_DEV_JWT."
       );
     }
 

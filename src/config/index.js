@@ -5,15 +5,16 @@ const config = {
   PORT: process.env.PORT || 3001,
   DATABASE_URL: process.env.DATABASE_URL,
   MONGODB_URI: process.env.MONGODB_URI,
-  SUPABASE_URL: process.env.SUPABASE_URL,
-  SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+  // SUPABASE_URL: process.env.SUPABASE_URL,
+  // SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
   RATE_LIMIT_MAX: parseInt(process.env.RATE_LIMIT_MAX) || 100,
   // Allow decoding JWTs in development without Supabase verification (dev only)
   // If the env var is explicitly set, honor it. Otherwise enable by default
   // when running in development and using MongoDB (local dev convenience).
-  ALLOW_DEV_JWT: (typeof process.env.ALLOW_DEV_JWT !== 'undefined')
-    ? process.env.ALLOW_DEV_JWT === 'true'
-    : (process.env.NODE_ENV === 'development' && !!process.env.MONGODB_URI),
+  ALLOW_DEV_JWT:
+    typeof process.env.ALLOW_DEV_JWT !== "undefined"
+      ? process.env.ALLOW_DEV_JWT === "true"
+      : process.env.NODE_ENV === "development" && !!process.env.MONGODB_URI,
 
   // Email configuration
   SMTP_HOST: process.env.SMTP_HOST,
@@ -34,8 +35,8 @@ const config = {
 // If using MongoDB, DATABASE_URL is not required. Otherwise require DATABASE_URL.
 const required = [
   // Either DATABASE_URL or MONGODB_URI must be present
-  "SUPABASE_URL",
-  "SUPABASE_SERVICE_ROLE_KEY",
+  // "SUPABASE_URL",
+  // "SUPABASE_SERVICE_ROLE_KEY",
   "SMTP_HOST",
   "SMTP_USER",
   "SMTP_PASS",
@@ -45,18 +46,24 @@ const required = [
 ];
 
 if (!config.DATABASE_URL && !config.MONGODB_URI) {
-  throw new Error('Missing required environment variable: DATABASE_URL or MONGODB_URI');
+  throw new Error(
+    "Missing required environment variable: DATABASE_URL or MONGODB_URI"
+  );
 }
 
 // If using Postgres, SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set.
 if (config.DATABASE_URL) {
   if (!config.SUPABASE_URL || !config.SUPABASE_SERVICE_ROLE_KEY) {
-    throw new Error('DATABASE_URL is set, please also set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY');
+    throw new Error(
+      "DATABASE_URL is set, please also set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY"
+    );
   }
 }
 
 // When using MongoDB (MONGODB_URI), SUPABASE keys are not required.
-const requiredWhenAny = required.filter(k => k !== 'SUPABASE_URL' && k !== 'SUPABASE_SERVICE_ROLE_KEY');
+const requiredWhenAny = required.filter(
+  (k) => k !== "SUPABASE_URL" && k !== "SUPABASE_SERVICE_ROLE_KEY"
+);
 for (const key of requiredWhenAny) {
   if (!config[key]) {
     throw new Error(`Missing required environment variable: ${key}`);

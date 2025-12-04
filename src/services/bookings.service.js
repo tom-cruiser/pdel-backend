@@ -65,6 +65,19 @@ class BookingsService {
           } catch (e) {}
           throw new Error('Coach not available');
         }
+        // Ensure coach exists in coaches collection (create if missing)
+        try {
+          const coachesService = require('./coaches.service');
+          if (bookingData.coach_name) {
+            await coachesService.createIfMissing(bookingData.coach_id, bookingData.coach_name);
+          } else {
+            // create with null name if not present
+            await coachesService.createIfMissing(bookingData.coach_id, null);
+          }
+        } catch (e) {
+          // non-fatal: if coaches collection is missing or fails, continue
+          console.warn('Failed to ensure coach exists:', e && e.message);
+        }
       }
 
       const booking = {
