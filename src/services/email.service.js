@@ -8,6 +8,10 @@ class EmailService {
       host: config.SMTP_HOST,
       port: config.SMTP_PORT,
       secure: config.SMTP_SECURE,
+      // Enable debug and a short connection timeout to surface errors quickly
+      logger: true,
+      debug: true,
+      connectionTimeout: 10000,
       auth: {
         user: config.SMTP_USER,
         pass: config.SMTP_PASS,
@@ -21,7 +25,23 @@ class EmailService {
       await this.transporter.verify();
       logger.info("✅ Email service connected successfully");
     } catch (error) {
-      logger.error("❌ Email service connection failed:", error);
+      // Log a concise, inspectable error object (message + stack).
+      logger.error("❌ Email service connection failed:", {
+        message: error && error.message ? error.message : String(error),
+        stack: error && error.stack ? error.stack : undefined,
+      });
+
+      // Also log the (non-sensitive) transport configuration to help debugging.
+      try {
+        logger.info("Email transport config", {
+          host: config.SMTP_HOST,
+          port: config.SMTP_PORT,
+          secure: config.SMTP_SECURE,
+          user: config.SMTP_USER,
+        });
+      } catch (e) {
+        logger.debug("Failed to log SMTP config", e && e.message);
+      }
     }
   }
 
