@@ -1,24 +1,14 @@
 const nodemailer = require("nodemailer");
-const sgTransport = require("nodemailer-sendgrid-transport");
 const config = require("../config");
 const logger = require("../utils/logger");
 
 class EmailService {
   constructor() {
-    // Prefer a nodemailer transport backed by SendGrid's HTTP API when API key is present.
-    if (config.SENDGRID_API_KEY) {
-      const options = { auth: { api_key: config.SENDGRID_API_KEY } };
-      this.transporter = nodemailer.createTransport(sgTransport(options));
-      logger.info("📧 Email service: SendGrid (nodemailer transport) configured");
-      // verify() may work for this transport; wrap in try/catch
-      this.verifyConnection();
-      return;
-    }
-
-    // SMTP fallback for local development
+    // Configure the Nodemailer Transporter for SMTP
     this.transporter = nodemailer.createTransport({
       host: config.SMTP_HOST,
       port: config.SMTP_PORT,
+      // For port 587 (TLS/STARTTLS), secure should be false.
       secure: config.SMTP_SECURE,
       logger: true,
       debug: true,
@@ -27,8 +17,13 @@ class EmailService {
         user: config.SMTP_USER,
         pass: config.SMTP_PASS,
       },
+      // TLS options: accept unauthorized for environments where TLS inspection occurs
+      tls: {
+        rejectUnauthorized: false,
+      },
     });
-    logger.info("📧 Email service: SMTP fallback configured");
+
+    logger.info("📧 Email service: SMTP transport configured");
     this.verifyConnection();
   }
 
