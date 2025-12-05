@@ -21,6 +21,7 @@
     "mongodb": "^5.9.0",
     "multer": "^2.0.2",
     "nodemailer": "^7.0.11",
+    "nodemailer-sendgrid-transport": "^0.2.0",
     "pg": "^8.16.3",
     "pino": "^8.21.0",
     "pino-http": "^8.6.1",

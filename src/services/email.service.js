@@ -2,28 +2,46 @@ const nodemailer = require("nodemailer");
 const config = require("../config");
 const logger = require("../utils/logger");
 
+let sgTransport;
+try {
+  // Try to require the SendGrid transport if available. This package wraps
+  // SendGrid's HTTP API and allows using Nodemailer API while avoiding SMTP.
+  sgTransport = require("nodemailer-sendgrid-transport");
+} catch (e) {
+  sgTransport = null;
+}
+
 class EmailService {
   constructor() {
-    // Configure the Nodemailer Transporter for SMTP
-    this.transporter = nodemailer.createTransport({
-      host: config.SMTP_HOST,
-      port: config.SMTP_PORT,
-      // For port 587 (TLS/STARTTLS), secure should be false.
-      secure: config.SMTP_SECURE,
-      logger: true,
-      debug: true,
-      connectionTimeout: 10000,
-      auth: {
-        user: config.SMTP_USER,
-        pass: config.SMTP_PASS,
-      },
-      // TLS options: accept unauthorized for environments where TLS inspection occurs
-      tls: {
-        rejectUnauthorized: false,
-      },
-    });
+    // If a SendGrid API key is provided, prefer the HTTP transport (works on PaaS)
+    if (config.SENDGRID_API_KEY && sgTransport) {
+      this.transporter = nodemailer.createTransport(
+        sgTransport({ auth: { api_key: config.SENDGRID_API_KEY } })
+      );
+      logger.info("📧 Email service: SendGrid HTTP transport configured (nodemailer)");
+    } else {
+      // Configure the Nodemailer Transporter for SMTP (local/dev fallback)
+      this.transporter = nodemailer.createTransport({
+        host: config.SMTP_HOST,
+        port: config.SMTP_PORT,
+        // For port 587 (TLS/STARTTLS), secure should be false.
+        secure: config.SMTP_SECURE,
+        logger: true,
+        debug: true,
+        connectionTimeout: 10000,
+        auth: {
+          user: config.SMTP_USER,
+          pass: config.SMTP_PASS,
+        },
+        // TLS options: accept unauthorized for environments where TLS inspection occurs
+        tls: {
+          rejectUnauthorized: false,
+        },
+      });
 
-    logger.info("📧 Email service: SMTP transport configured");
+      logger.info("📧 Email service: SMTP transport configured");
+    }
+
     this.verifyConnection();
   }
 

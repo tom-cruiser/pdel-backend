@@ -36,17 +36,21 @@ const config = {
 
 // Validate required environment variables
 // If using MongoDB, DATABASE_URL is not required. Otherwise require DATABASE_URL.
+// Required variables when not using a provider that replaces SMTP (e.g. SendGrid)
 const required = [
   // Either DATABASE_URL or MONGODB_URI must be present
   // "SUPABASE_URL",
   // "SUPABASE_SERVICE_ROLE_KEY",
-  "SMTP_HOST",
-  "SMTP_USER",
-  "SMTP_PASS",
   "IMAGEKIT_PUBLIC_KEY",
   "IMAGEKIT_PRIVATE_KEY",
   "IMAGEKIT_URL_ENDPOINT",
 ];
+
+// If SENDGRID_API_KEY is not provided, require SMTP env vars for email sending
+const requireSmtp = typeof process.env.SENDGRID_API_KEY === "undefined" || !process.env.SENDGRID_API_KEY;
+if (requireSmtp) {
+  required.push("SMTP_HOST", "SMTP_USER", "SMTP_PASS");
+}
 
 if (!config.DATABASE_URL && !config.MONGODB_URI) {
   throw new Error(
