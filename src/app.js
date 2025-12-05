@@ -23,7 +23,10 @@ const corsOptions = {
 
     const allowedOrigins = [
       "http://localhost:5173",
-      "https://pdel-front.onrender.com"
+      "https://pdel-front.onrender.com",
+      // Common production hostnames for your site
+      "https://www.bujumburapadel.club",
+      "https://bujumburapadel.club"
     ];
 
     // Add CLIENT_URL from environment if set
