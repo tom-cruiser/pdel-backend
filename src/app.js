@@ -22,31 +22,37 @@ const corsOptions = {
     try {
       logger.debug({ origin }, "CORS origin check");
     } catch (e) {
-      // logger may not be available in some contexts; swallow logging errors
+      // swallow logging errors
     }
 
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
 
-    // Use `CLIENT_URL` env var as the single source of truth for allowed origins.
-    // `CLIENT_URL` can be a single URL or a comma-separated list.
+    // Use `CLIENT_URL` env var as the source of truth for allowed origins.
+    // `CLIENT_URL` can be a single URL, a comma-separated list, or contain wildcard entries like `*.example.com`.
     if (process.env.CLIENT_URL) {
-      const clientUrls = process.env.CLIENT_URL.split(",").map(url => url.trim());
-      if (clientUrls.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
+      const clientUrls = process.env.CLIENT_URL.split(",").map(url => url.trim()).filter(Boolean);
+      const isAllowed = clientUrls.some(u => {
+        if (u.startsWith("*.")) {
+          // wildcard entry: allow any subdomain of example.com when u is "*.example.com"
+          const domain = u.slice(1); // ".example.com"
+          return origin.endsWith(domain);
+        }
+        return origin === u;
+      });
+
+      if (isAllowed || process.env.NODE_ENV === 'development') {
         try {
-          logger.debug({ origin, clientUrls, accepted }, "CORS clientUrl match");
+          logger.debug({ origin, clientUrls, isAllowed }, "CORS clientUrl match");
         } catch (e) {}
         return callback(null, true);
       }
     }
 
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-
     // Fallback: during development allow everything to make local testing easy
     if (process.env.NODE_ENV === 'development') return callback(null, true);
 
-    // If we reach here the origin was not found in CLIENT_URL
+    // If we reach here the origin was not allowed
     try {
       logger.warn({ origin }, "CORS denied origin");
     } catch (e) {}
