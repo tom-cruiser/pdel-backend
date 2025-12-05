@@ -2,6 +2,7 @@ const express = require("express");
 const authRoutes = require("./auth");
 const profilesRoutes = require("./profiles");
 const courtsRoutes = require("./courts");
+const coachesRoutes = require("./coaches");
 const bookingsRoutes = require("./booking");
 const messagesRoutes = require("./messages");
 const galleryRoutes = require("./gallery");
@@ -13,6 +14,7 @@ const router = express.Router();
 // Public routes
 router.use("/auth", authRoutes);
 router.use("/courts", courtsRoutes.publicRouter);
+router.use('/coaches', coachesRoutes.publicRouter);
 router.use("/gallery", galleryRoutes.publicRouter);
 router.use("/messages", messagesRoutes.publicRouter);
 

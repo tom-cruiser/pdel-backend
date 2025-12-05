@@ -1,6 +1,5 @@
 const app = require("./app");
 const config = require("./config");
-const { testConnection } = require("./db");
 const mongo = require("./db/mongo");
 const logger = require("./utils/logger");
 
@@ -8,20 +7,17 @@ const startServer = async () => {
   try {
     logger.info("🚀 Starting Court Booking Backend...");
 
-    // Test database connection (Postgres) or MongoDB depending on env
-    let dbConnected = true;
+    // Require MongoDB connection. This backend runs in MongoDB-only mode.
     if (process.env.MONGODB_URI) {
       try {
         await mongo.connect();
         logger.info("✅ MongoDB connected successfully");
       } catch (err) {
         logger.error("❌ MongoDB connection failed:", err);
-        dbConnected = false;
+        process.exit(1);
       }
     } else {
-      dbConnected = await testConnection();
-    }
-    if (!dbConnected) {
+      logger.error("❌ MONGODB_URI is not configured. Set MONGODB_URI and restart.");
       process.exit(1);
     }
 

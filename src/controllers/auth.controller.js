@@ -63,6 +63,13 @@ const authController = {
 
     try {
       const profilesService = require('../services/profiles.service');
+
+      // Check if email already exists
+      const existingProfile = await profilesService.getProfileByEmail(email);
+      if (existingProfile) {
+        return res.status(409).json(formatResponse(false, null, 'Email already registered'));
+      }
+
       const crypto = require('crypto');
 
       // simple scrypt hash format used by admin script
@@ -84,46 +91,86 @@ const authController = {
         email_confirmed: false,
       });
 
+      // Log the confirmation link for debugging
+      console.log('🔗 Email confirmation token generated:', email_confirm_token);
+      console.log('📧 User email:', email);
+
       // send confirmation email (if SMTP configured)
       try {
         const emailService = require('../services/email.service');
         const clientUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:5173';
         const confirmLink = `${clientUrl.replace(/\/$/, '')}/confirm-email?token=${email_confirm_token}`;
-        // Log the confirmation link so we can verify which URL is used in emails
-        console.info('Email confirmation link:', confirmLink);
+        
+        console.log('🔗 Confirmation link:', confirmLink);
+        
         const subject = 'Confirm your email address';
-        const html = `<p>Hi ${doc.full_name || ''},</p>
+        const html = `<p>Hi ${doc.full_name || 'there'},</p>
           <p>Thanks for signing up. Please confirm your email by clicking the link below:</p>
-          <p><a href="${confirmLink}">Confirm email</a></p>
+          <p><a href="${confirmLink}" style="background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">Confirm Email</a></p>
+          <p>Or copy and paste this link in your browser:<br>${confirmLink}</p>
           <p>If you didn't create an account, you can ignore this message.</p>`;
-        await emailService.sendEmail(email, subject, html);
+        
+        const result = await emailService.sendEmail(email, subject, html);
+        
+        if (result && result.success) {
+          console.log('✅ Confirmation email sent to:', email);
+        } else {
+          console.error('❌ Failed to send confirmation email:', result && result.error);
+        }
       } catch (e) {
-        // Log but don't fail registration if email sending fails
-        console.error('Failed to send confirmation email', e);
+        console.error('❌ Email sending error:', e && e.message ? e.message : e);
+        // Don't fail registration if email sending fails
       }
 
       // Do not return an active token on registration; require email confirmation
       const safeProfile = { ...doc };
       if (safeProfile.password_hash) delete safeProfile.password_hash;
       if (safeProfile.email_confirm_token) delete safeProfile.email_confirm_token;
-      return res.json(formatResponse(true, { message: 'Registration successful. Please check your email to confirm your account.' }));
+
+      return res.json(formatResponse(true, { 
+        message: 'Registration successful. Please check your email to confirm your account.',
+        note: process.env.NODE_ENV === 'development' ? `Dev token: ${email_confirm_token}` : undefined
+      }));
     } catch (e) {
       console.error('register error', e);
-      return res.status(500).json(formatResponse(false, null, 'Registration failed'));
+      return res.status(500).json(formatResponse(false, null, 'Registration failed: ' + (e && e.message ? e.message : '')));
     }
   },
   async confirmEmail(req, res) {
     try {
+      console.log('🔍 confirmEmail called with:', { query: req.query, body: req.body, method: req.method });
+
       const token = req.query.token || req.body?.token;
       if (!token) return res.status(400).json(formatResponse(false, null, 'Token required'));
+
       const profilesService = require('../services/profiles.service');
       const profile = await profilesService.getProfileByConfirmToken(token);
       if (!profile) return res.status(400).json(formatResponse(false, null, 'Invalid or expired token'));
-      await profilesService.updateProfile(profile._id || profile.id, { email_confirmed: true, email_confirm_token: null });
-      return res.json(formatResponse(true, { message: 'Email confirmed' }));
+
+      // Update profile to confirmed
+      const id = profile._id || profile.id;
+      await profilesService.updateProfile(id, { email_confirmed: true, email_confirm_token: null });
+      console.log('✅ Email confirmed successfully for:', profile.email);
+
+      // AUTO-LOGIN: Generate a dev token for immediate login
+      const loginToken = `dev:${id}`;
+
+      // Get updated profile and sanitize
+      const updatedProfile = await profilesService.getProfile(id);
+      const safeProfile = { ...updatedProfile };
+      if (safeProfile.password_hash) delete safeProfile.password_hash;
+      if (safeProfile.email_confirm_token) delete safeProfile.email_confirm_token;
+      if (safeProfile.password_reset_token) delete safeProfile.password_reset_token;
+      if (safeProfile.password_reset_expires) delete safeProfile.password_reset_expires;
+
+      return res.json(formatResponse(true, { 
+        token: loginToken, 
+        profile: safeProfile,
+        message: 'Email confirmed successfully. You are now logged in!'
+      }));
     } catch (e) {
       console.error('confirmEmail error', e);
-      return res.status(500).json(formatResponse(false, null, 'Confirmation failed'));
+      return res.status(500).json(formatResponse(false, null, 'Confirmation failed: ' + (e && e.message ? e.message : '')));
     }
   },
   async requestPasswordReset(req, res) {
