@@ -81,56 +81,25 @@ const authController = {
       // email confirmation token
       const email_confirm_token = crypto.randomBytes(20).toString('hex');
 
+      // Create profile and auto-confirm email so users can sign in immediately
       const doc = await profilesService.createProfile(userId, {
         email,
         full_name: full_name || null,
         phone: phone || null,
         is_admin: false,
         password_hash,
-        email_confirm_token,
-        email_confirmed: false,
+        // no confirmation token required when auto-confirming
+        email_confirm_token: null,
+        email_confirmed: true,
       });
 
-      // Log the confirmation link for debugging
-      console.log('🔗 Email confirmation token generated:', email_confirm_token);
-      console.log('📧 User email:', email);
-
-      // send confirmation email (if SMTP configured)
-      try {
-        const emailService = require('../services/email.service');
-        const clientUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:5173';
-        const confirmLink = `${clientUrl.replace(/\/$/, '')}/confirm-email?token=${email_confirm_token}`;
-        
-        console.log('🔗 Confirmation link:', confirmLink);
-        
-        const subject = 'Confirm your email address';
-        const html = `<p>Hi ${doc.full_name || 'there'},</p>
-          <p>Thanks for signing up. Please confirm your email by clicking the link below:</p>
-          <p><a href="${confirmLink}" style="background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">Confirm Email</a></p>
-          <p>Or copy and paste this link in your browser:<br>${confirmLink}</p>
-          <p>If you didn't create an account, you can ignore this message.</p>`;
-        
-        const result = await emailService.sendEmail(email, subject, html);
-        
-        if (result && result.success) {
-          console.log('✅ Confirmation email sent to:', email);
-        } else {
-          console.error('❌ Failed to send confirmation email:', result && result.error);
-        }
-      } catch (e) {
-        console.error('❌ Email sending error:', e && e.message ? e.message : e);
-        // Don't fail registration if email sending fails
-      }
-
-      // Do not return an active token on registration; require email confirmation
+      // Sanitize and return an auth token so frontend can sign the user in immediately
       const safeProfile = { ...doc };
       if (safeProfile.password_hash) delete safeProfile.password_hash;
       if (safeProfile.email_confirm_token) delete safeProfile.email_confirm_token;
 
-      return res.json(formatResponse(true, { 
-        message: 'Registration successful. Please check your email to confirm your account.',
-        note: process.env.NODE_ENV === 'development' ? `Dev token: ${email_confirm_token}` : undefined
-      }));
+      const token = `dev:${userId}`;
+      return res.json(formatResponse(true, { token, profile: safeProfile, message: 'Registration successful.' }));
     } catch (e) {
       console.error('register error', e);
       return res.status(500).json(formatResponse(false, null, 'Registration failed: ' + (e && e.message ? e.message : '')));
