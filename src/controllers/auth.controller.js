@@ -156,21 +156,12 @@ const authController = {
       const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
       await profilesService.updateProfile(profile._id || profile.id, { password_reset_token: token, password_reset_expires: expires });
 
-      try {
-        const emailService = require('../services/email.service');
-        const clientUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:5173';
-        const resetLink = `${clientUrl.replace(/\/$/, '')}/reset-password?token=${token}`;
-        // Log the reset link so we can verify which URL is used in emails
-        console.info('Password reset link:', resetLink);
-        const subject = 'Password reset request';
-        const html = `<p>Hi ${profile.full_name || ''},</p>
-          <p>We received a request to reset your password. Click the link below to set a new password (valid for 1 hour):</p>
-          <p><a href="${resetLink}">Reset password</a></p>
-          <p>If you didn't request this, you can safely ignore this email.</p>`;
-        await emailService.sendEmail(profile.email, subject, html);
-      } catch (e) {
-        console.error('Failed to send password reset email', e);
-      }
+      // NOTE: outbound email sending has been disabled to avoid relying on SMTP in
+      // production environments (e.g. Render blocks egress). We still generate and
+      // log the reset link so operators can retrieve it when needed.
+      const clientUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:5173';
+      const resetLink = `${clientUrl.replace(/\/$/, '')}/reset-password?token=${token}`;
+      console.info('Password reset link (email sending disabled):', resetLink);
 
       return res.json(formatResponse(true, { message: 'If that email exists we sent a reset link' }));
     } catch (e) {
