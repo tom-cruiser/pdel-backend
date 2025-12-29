@@ -12,6 +12,24 @@ class BookingsService {
       ? bookingData.booking_date.toISOString().slice(0, 10)
       : String(bookingData.booking_date);
 
+    // Check 2-day cooldown: user must wait at least 2 days after their last booking
+    const lastBooking = await bookings.findOne(
+      { user_id: userId, status: { $ne: 'cancelled' } },
+      { sort: { booking_date: -1, created_at: -1 } }
+    );
+
+    if (lastBooking) {
+      const lastBookingDate = new Date(lastBooking.booking_date);
+      const currentBookingDate = new Date(bookingDateStr);
+      const daysDifference = Math.floor((currentBookingDate - lastBookingDate) / (1000 * 60 * 60 * 24));
+
+      if (daysDifference < 2) {
+        const nextAvailableDate = new Date(lastBookingDate);
+        nextAvailableDate.setDate(nextAvailableDate.getDate() + 2);
+        throw new Error(`You must wait at least 2 days after your last booking. Next available booking date: ${nextAvailableDate.toISOString().slice(0, 10)}`);
+      }
+    }
+
     // Check availability: overlapping times. Use a simple range query on times.
     const timeOverlap = await bookings.findOne({
       court_id: bookingData.court_id,
