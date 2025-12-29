@@ -31,7 +31,8 @@ const errorMiddleware = (error, req, res, next) => {
 
   if (
     error.message.includes("not available") ||
-    error.message.includes("already booked")
+    error.message.includes("already booked") ||
+    error.message.includes("must wait")
   ) {
     return res.status(409).json(formatResponse(false, null, error.message));
   }
