@@ -13,10 +13,12 @@ class BookingsService {
       : String(bookingData.booking_date);
 
     // Check 2-day cooldown: user must wait at least 2 days after their last booking
-    const lastBooking = await bookings.findOne(
-      { user_id: userId, status: { $ne: 'cancelled' } },
-      { sort: { booking_date: -1, created_at: -1 } }
-    );
+    const lastBooking = await bookings
+      .find({ user_id: userId, status: { $ne: 'cancelled' } })
+      .sort({ booking_date: -1, created_at: -1 })
+      .limit(1)
+      .toArray()
+      .then(docs => docs[0] || null);
 
     if (lastBooking) {
       const lastBookingDate = new Date(lastBooking.booking_date);
