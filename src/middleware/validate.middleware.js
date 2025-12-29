@@ -4,7 +4,7 @@ const { formatResponse } = require("../utils/helpers");
 // Validation schemas
 const schemas = {
   booking: Joi.object({
-    court_id: Joi.string().uuid().required(),
+    court_id: Joi.string().required(),
     booking_date: Joi.date().iso().required(),
     start_time: Joi.string()
       .pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/)
