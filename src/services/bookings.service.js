@@ -208,6 +208,7 @@ class BookingsService {
       ...(updates.notes !== undefined && { notes: updates.notes }),
       ...(updates.coach_id !== undefined && { coach_id: updates.coach_id }),
       ...(updates.coach_name !== undefined && { coach_name: updates.coach_name }),
+      ...(updates.membership_status !== undefined && { membership_status: updates.membership_status }),
       ...(updates.status !== undefined && { status: updates.status }),
       updated_at: new Date(),
     };
