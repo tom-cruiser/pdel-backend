@@ -64,14 +64,22 @@ const galleryController = {
 
   async deleteImage(req, res, next) {
     try {
+      console.log('[GalleryController] Delete request for image id:', req.params.id);
+      console.log('[GalleryController] User:', req.user?.email);
+      
       const image = await galleryService.deleteImage(req.params.id);
+      
       if (!image) {
+        console.log('[GalleryController] Image not found, returning 404');
         return res
           .status(404)
           .json(formatResponse(false, null, "Image not found"));
       }
+      
+      console.log('[GalleryController] Image deleted successfully');
       res.json(formatResponse(true, null, "Image deleted successfully"));
     } catch (error) {
+      console.error('[GalleryController] Error deleting image:', error);
       next(error);
     }
   },

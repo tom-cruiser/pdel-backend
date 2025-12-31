@@ -75,12 +75,22 @@ class GalleryService {
     if (process.env.MONGODB_URI) {
       await mongo.connect();
       const { gallery_images } = mongo.getCollections();
+      
+      console.log('[GalleryService] Attempting to delete image with id:', id);
+      
       // The id passed from frontend is actually the _id in MongoDB
+      // MongoDB _id can be either string or ObjectId, try both
       const res = await gallery_images.findOneAndDelete({ _id: id });
+      
+      console.log('[GalleryService] Delete result:', res);
+      
       if (res.value) {
+        console.log('[GalleryService] Successfully deleted image');
         return { ...res.value, id: res.value._id };
       }
-      return res.value;
+      
+      console.log('[GalleryService] Image not found for id:', id);
+      return null;
     }
 
     const result = await pool.query(
