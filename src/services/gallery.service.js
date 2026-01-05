@@ -78,6 +78,14 @@ class GalleryService {
       
       console.log('[GalleryService] Attempting to delete image with id:', id);
       console.log('[GalleryService] ID type:', typeof id);
+      console.log('[GalleryService] ID value:', JSON.stringify(id));
+      
+      // List all images to compare
+      const allImages = await gallery_images.find({}).limit(3).toArray();
+      console.log('[GalleryService] Sample _ids in database:');
+      allImages.forEach((img, idx) => {
+        console.log(`  [${idx}] _id:`, img._id, 'type:', typeof img._id, 'match:', img._id === id);
+      });
       
       // First, check if the image exists
       const existing = await gallery_images.findOne({ _id: id });
