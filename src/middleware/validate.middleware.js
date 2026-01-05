@@ -18,6 +18,8 @@ const schemas = {
     // string, or null/empty when not provided.
     coach_id: Joi.string().allow("", null),
     coach_name: Joi.string().max(100).allow("", null),
+    // Membership status is required and must be either 'member' or 'non_member'
+    membership_status: Joi.string().valid('member', 'non_member').required(),
   }),
 
   message: Joi.object({

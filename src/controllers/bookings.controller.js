@@ -123,6 +123,19 @@ const bookingsController = {
       next(error);
     }
   },
+
+  async deleteBooking(req, res, next) {
+    try {
+      const result = await bookingsService.deleteBooking(
+        req.params.id,
+        req.user.id,
+        req.profile.is_admin
+      );
+      res.json(formatResponse(true, result, "Booking deleted successfully"));
+    } catch (error) {
+      next(error);
+    }
+  },
 };
 
 module.exports = bookingsController;

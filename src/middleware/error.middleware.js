@@ -37,6 +37,15 @@ const errorMiddleware = (error, req, res, next) => {
     return res.status(409).json(formatResponse(false, null, error.message));
   }
 
+  // Validation errors
+  if (
+    error.message.includes("is required") ||
+    error.message.includes("must be") ||
+    error.message.includes("invalid")
+  ) {
+    return res.status(400).json(formatResponse(false, null, error.message));
+  }
+
   // Default server error
   res.status(500).json(formatResponse(false, null, "Internal server error"));
 };

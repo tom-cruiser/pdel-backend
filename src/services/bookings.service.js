@@ -223,6 +223,22 @@ class BookingsService {
   async cancelBooking(id, userId, isAdmin = false) {
     return this.updateBooking(id, { status: "cancelled" }, userId, isAdmin);
   }
+
+  async deleteBooking(id, userId, isAdmin = false) {
+    await mongo.connect();
+    const { bookings } = mongo.getCollections();
+
+    if (!isAdmin) {
+      const ownership = await bookings.findOne({ _id: id });
+      if (!ownership || ownership.user_id !== userId) throw new Error('Not authorized');
+    }
+
+    const result = await bookings.deleteOne({ _id: id });
+    if (result.deletedCount === 0) {
+      throw new Error('Booking not found');
+    }
+    return { id, deleted: true };
+  }
 }
 
 module.exports = new BookingsService();

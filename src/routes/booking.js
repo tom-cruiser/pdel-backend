@@ -31,8 +31,9 @@ router.use(authMiddleware);
 
 router.get("/", bookingsController.getMyBookings);
 router.post("/", validate(schemas.booking), bookingsController.createBooking);
+router.patch("/:id/cancel", bookingsController.cancelBooking);
 router.get("/:id", bookingsController.getBooking);
 router.put("/:id", validate(schemas.booking), bookingsController.updateBooking);
-router.delete("/:id", bookingsController.cancelBooking);
+router.delete("/:id", bookingsController.deleteBooking);
 
 module.exports = router;
