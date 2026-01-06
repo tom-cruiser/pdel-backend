@@ -46,6 +46,9 @@ const authController = {
           .json(formatResponse(false, null, "Invalid email or password"));
       }
 
+      // Update last login time
+      await profilesService.updateLastLogin(profile._id || profile.id);
+
       // Success — return dev token for local development
       const token = `dev:${profile._id || profile.id}`;
       // Sanitize profile before returning

@@ -72,6 +72,19 @@ class ProfilesService {
     const count = await profiles.countDocuments({ email: email.toLowerCase() });
     return count > 0;
   }
+
+  async updateLastLogin(userId) {
+    const profiles = await this.ensureConnected();
+    await profiles.updateOne(
+      { _id: userId },
+      { 
+        $set: { 
+          last_login_at: new Date(),
+          updated_at: new Date()
+        } 
+      }
+    );
+  }
 }
 
 module.exports = new ProfilesService();
