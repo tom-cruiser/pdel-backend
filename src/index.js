@@ -1,7 +1,24 @@
+const { createServer } = require("http");
+const { Server } = require("socket.io");
 const app = require("./app");
 const config = require("./config");
 const mongo = require("./db/mongo");
 const logger = require("./utils/logger");
+
+// Create HTTP server and Socket.IO instance
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
+  cors: {
+    origin: process.env.CLIENT_URL ? process.env.CLIENT_URL.split(",").map(url => url.trim()) : "*",
+    credentials: true,
+  },
+});
+
+// Make io available to the app
+app.set('io', io);
+
+// Import socket handlers
+const initializeSocketHandlers = require("./socket");
 
 const startServer = async () => {
   try {
@@ -21,8 +38,12 @@ const startServer = async () => {
       process.exit(1);
     }
 
+    // Initialize Socket.IO handlers
+    initializeSocketHandlers(io);
+    logger.info("✅ Socket.IO initialized");
+
     // Start server
-    app.listen(config.PORT, () => {
+    httpServer.listen(config.PORT, () => {
       logger.info(`✅ Server running on port ${config.PORT}`);
       logger.info(`📊 Environment: ${config.NODE_ENV}`);
       logger.info(

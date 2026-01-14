@@ -54,6 +54,8 @@ function getCollections() {
     coaches: db.collection('coaches'),
     messages: db.collection('messages'),
     gallery_images: db.collection('gallery_images'),
+    chats: db.collection('chats'),
+    chat_messages: db.collection('chat_messages'),
   };
 }
 

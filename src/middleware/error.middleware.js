@@ -2,7 +2,13 @@ const logger = require("../utils/logger");
 const { formatResponse } = require("../utils/helpers");
 
 const errorMiddleware = (error, req, res, next) => {
-  logger.error("Error:", error);
+  // Log full error details
+  logger.error("Error:", {
+    message: error.message,
+    stack: error.stack,
+    name: error.name,
+    code: error.code,
+  });
 
   // Database errors
   if (error.code === "23505") {

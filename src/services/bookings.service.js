@@ -166,25 +166,65 @@ class BookingsService {
     return docs;
   }
 
-  async getAllBookings(filters = {}) {
+  async getAllBookings(filters = {}, page = 1, limit = 10) {
     await mongo.connect();
     const { bookings, profiles, courts } = mongo.getCollections();
+    
+    // Build query
     const query = {};
     if (filters.court_id) query.court_id = filters.court_id;
+    if (filters.status) query.status = filters.status;
     if (filters.date_from || filters.date_to) {
       query.booking_date = {};
       if (filters.date_from) query.booking_date.$gte = filters.date_from;
       if (filters.date_to) query.booking_date.$lte = filters.date_to;
     }
 
-    const docs = await bookings.find(query).sort({ booking_date: -1, start_time: -1 }).toArray();
+    // Get total count first
+    const total = await bookings.countDocuments(query);
+    
+    // Calculate pagination
+    const skip = (page - 1) * limit;
+    const totalPages = Math.ceil(total / limit);
+
+    // Fetch bookings with pagination
+    const docs = await bookings
+      .find(query)
+      .sort({ booking_date: -1, start_time: -1 })
+      .skip(skip)
+      .limit(limit)
+      .toArray();
+    
+    // Enrich with profile and court data
     for (const b of docs) {
       const p = await profiles.findOne({ _id: b.user_id });
       const c = await courts.findOne({ _id: b.court_id });
       b.profiles = p ? { full_name: p.full_name, email: p.email, phone: p.phone } : null;
       b.courts = c ? { name: c.name, color: c.color } : null;
     }
-    return docs;
+
+    // Apply search filter after enrichment (searching in user names/emails)
+    let filteredDocs = docs;
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
+      filteredDocs = docs.filter(b => 
+        (b.profiles?.full_name && b.profiles.full_name.toLowerCase().includes(searchLower)) ||
+        (b.profiles?.email && b.profiles.email.toLowerCase().includes(searchLower)) ||
+        (b.courts?.name && b.courts.name.toLowerCase().includes(searchLower))
+      );
+    }
+
+    return {
+      bookings: filteredDocs,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      }
+    };
   }
 
   async updateBooking(id, updates, userId, isAdmin = false) {

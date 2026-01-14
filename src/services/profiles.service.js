@@ -62,9 +62,59 @@ class ProfilesService {
     return res.value;
   }
 
-  async getAllProfiles() {
+  async getAllProfiles(filters = {}, page = 1, limit = 10) {
     const profiles = await this.ensureConnected();
-    return profiles.find({}).sort({ created_at: -1 }).toArray();
+    
+    // Build query
+    const query = {};
+    if (filters.role === 'admin') {
+      query.is_admin = true;
+    } else if (filters.role === 'user') {
+      query.is_admin = { $ne: true };
+    }
+    
+    if (filters.email_confirmed === 'true') {
+      query.email_confirmed = true;
+    } else if (filters.email_confirmed === 'false') {
+      query.email_confirmed = { $ne: true };
+    }
+
+    // Get total count
+    const total = await profiles.countDocuments(query);
+    
+    // Calculate pagination
+    const skip = (page - 1) * limit;
+    const totalPages = Math.ceil(total / limit);
+
+    // Fetch profiles with pagination
+    let docs = await profiles
+      .find(query)
+      .sort({ created_at: -1 })
+      .skip(skip)
+      .limit(limit)
+      .toArray();
+
+    // Apply search filter after fetching (searching in name, email, phone)
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
+      docs = docs.filter(p =>
+        (p.full_name && p.full_name.toLowerCase().includes(searchLower)) ||
+        (p.email && p.email.toLowerCase().includes(searchLower)) ||
+        (p.phone && p.phone.includes(searchLower))
+      );
+    }
+
+    return {
+      profiles: docs,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      }
+    };
   }
 
   async profileExists(email) {

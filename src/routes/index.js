@@ -8,6 +8,7 @@ const messagesRoutes = require("./messages");
 const galleryRoutes = require("./gallery");
 const adminRoutes = require("./admin");
 const debugRoutes = require("./debug");
+const chatRoutes = require("./chat");
 
 const router = express.Router();
 
@@ -21,6 +22,7 @@ router.use("/messages", messagesRoutes.publicRouter);
 // Protected routes
 router.use("/profiles", profilesRoutes);
 router.use("/bookings", bookingsRoutes);
+router.use("/chat", chatRoutes);
 
 // Admin routes
 router.use("/admin", adminRoutes);

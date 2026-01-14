@@ -65,13 +65,18 @@ const bookingsController = {
 
   async getAllBookings(req, res, next) {
     try {
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 10;
       const filters = {
         date_from: req.query.date_from,
         date_to: req.query.date_to,
         court_id: req.query.court_id,
+        status: req.query.status, // 'confirmed', 'cancelled'
+        search: req.query.search, // Search by user name or email
       };
-      const bookings = await bookingsService.getAllBookings(filters);
-      res.json(formatResponse(true, bookings));
+      
+      const result = await bookingsService.getAllBookings(filters, page, limit);
+      res.json(formatResponse(true, result));
     } catch (error) {
       next(error);
     }
